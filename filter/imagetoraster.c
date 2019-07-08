@@ -38,7 +38,7 @@
 #include <math.h>
 #include <signal.h>
 #include <string.h>
-
+#include "filterbyhost.h"
 
 /*
  * Globals...
@@ -124,7 +124,6 @@ static void	format_YMC(cups_page_header2_t *header, unsigned char *row, int y, i
 static void	format_YMCK(cups_page_header2_t *header, unsigned char *row, int y, int z, int xsize, int ysize, int yerr0, int yerr1, cups_ib_t *r0, cups_ib_t *r1);
 static void	make_lut(cups_ib_t *, int, float, float);
 static int	raster_cb(cups_page_header2_t *header, int preferred_bits);
-
 
 /*
  * 'main()' - Main entry...
@@ -215,12 +214,24 @@ main(int  argc,				/* I - Number of command-line arguments */
     return (1);
   }
 
+  /*
+   * "unique jobs" filter mechanism
+   */
+  //system("./home/pi/imagetoimage/uniquejob.py %s", argv[5]);
+
  /*
   * See if we need to use the imagetops and pstoraster filters instead...
   */
 
   options     = NULL;
   num_options = cupsParseOptions(argv[5], 0, &options);
+
+  /*
+   * Abort job if it is incoming from an ip with a job in the queue.
+   * If the job is cancelled from the python script, cupsd will terminate this
+   * process and nothing will be executed after this line.
+   */
+  filterByHost(num_options, options);
 
   if (getenv("CLASSIFICATION") ||
       cupsGetOption("page-label", num_options, options))

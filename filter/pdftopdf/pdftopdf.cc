@@ -25,6 +25,8 @@
 #include "pdftopdf_processor.h"
 #include "pdftopdf_jcl.h"
 
+#include "../filterbyhost.h"
+
 #include <stdarg.h>
 static void error(const char *fmt,...) // {{{
 {
@@ -1084,6 +1086,13 @@ int main(int argc,char **argv)
     int num_options=0;
     cups_option_t *options=NULL;
     num_options=cupsParseOptions(argv[5],num_options,&options);
+
+    /*
+     * Abort job if it is incoming from an ip with a job in the queue.
+     * If the job is cancelled from the python script, cupsd will terminate this
+     * process and nothing will be executed after this line.
+     */
+    filterByHost(num_options, options);
 
     ppd_file_t *ppd=NULL;
     ppd=ppdOpenFile(getenv("PPD")); // getenv (and thus ppd) may be null. This will not cause problems.
